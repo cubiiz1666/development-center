@@ -15,9 +15,19 @@ st.markdown("""
 st.title("📊 ระบบรายงานผลการประเมิน สพด. ปีการศึกษา 2567")
 
 # 2. เชื่อมต่อข้อมูลจาก Google Sheets (ระบุ URL ของชีทคุณ)
+sheet_id = "1mGVj2fHIgwtOzbJTKP0_T-ABmSlmayQ1rb48rY4SSFI" url = "https://docs.google.com/spreadsheets/d/1mGVj2fHIgwtOzbJTKP0_T-ABmSlmayQ1rb48rY4SSFI/edit?gid=469626894#gid=469626894"
+gid_id = "469626894"
 url = "https://docs.google.com/spreadsheets/d/1mGVj2fHIgwtOzbJTKP0_T-ABmSlmayQ1rb48rY4SSFI/edit?gid=469626894#gid=469626894"
-conn = st.connection("gsheets", type=GSheetsConnection)
-df = conn.read(spreadsheet=url, worksheet="DATA2567(y68)")
+@st.cache_data(ttl=86400) # อัปเดตข้อมูลทุก 24 ชั่วโมง
+def load_data(url):
+    # ใช้ pandas อ่านโดยตรง จะเสถียรกว่าในกรณี public sheet
+    return pd.read_csv(url)
+
+try:
+    df = load_data(url)
+    st.success("เชื่อมต่อข้อมูลสำเร็จ!")
+except Exception as e:
+    st.error(f"ไม่สามารถดึงข้อมูลได้: {e}")
 
 # 3. ส่วนฟิลเตอร์สำหรับเจ้าหน้าที่ (Sidebar)
 st.sidebar.header("ตัวเลือกการกรองข้อมูล")
