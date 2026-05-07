@@ -15,9 +15,10 @@ st.markdown("""
 st.title("📊 ระบบรายงานผลการประเมิน สพด. ปีการศึกษา 2567")
 
 # 2. เชื่อมต่อข้อมูลจาก Google Sheets (ระบุ URL ของชีทคุณ)
-sheet_id = "1mGVj2fHIgwtOzbJTKP0_T-ABmSlmayQ1rb48rY4SSFI" url = "https://docs.google.com/spreadsheets/d/1mGVj2fHIgwtOzbJTKP0_T-ABmSlmayQ1rb48rY4SSFI/edit?gid=469626894#gid=469626894"
+sheet_id = "1mGVj2fHIgwtOzbJTKP0_T-ABmSlmayQ1rb48rY4SSFI"
 gid_id = "469626894"
 url = "https://docs.google.com/spreadsheets/d/1mGVj2fHIgwtOzbJTKP0_T-ABmSlmayQ1rb48rY4SSFI/edit?gid=469626894#gid=469626894"
+
 @st.cache_data(ttl=86400) # อัปเดตข้อมูลทุก 24 ชั่วโมง
 def load_data(url):
     # ใช้ pandas อ่านโดยตรง จะเสถียรกว่าในกรณี public sheet
