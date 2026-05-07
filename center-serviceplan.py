@@ -15,7 +15,7 @@ st.markdown("""
 st.title("📊 ระบบรายงานผลการประเมิน สพด. ปีการศึกษา 2567")
 
 # 2. เชื่อมต่อข้อมูลจาก Google Sheets (ระบุ URL ของชีทคุณ)
-url = "YOUR_GOOGLE_SHEET_URL_HERE"
+url = "https://docs.google.com/spreadsheets/d/1mGVj2fHIgwtOzbJTKP0_T-ABmSlmayQ1rb48rY4SSFI/edit?gid=469626894#gid=469626894"
 conn = st.connection("gsheets", type=GSheetsConnection)
 df = conn.read(spreadsheet=url, worksheet="DATA2567(y68)")
 
