@@ -26,7 +26,6 @@ def load_data(url):
 
 try:
     df = load_data(url)
-    
     # 1. ล้างช่องว่าง (Strip) และแปลงเป็นตัวพิมพ์เล็กทั้งหมดเพื่อความแม่นยำ
     df.columns = df.columns.str.strip().str.lower()
     
