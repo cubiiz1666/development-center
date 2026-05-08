@@ -56,7 +56,7 @@ try:
         df_filtered = df_filtered[df_filtered['ministry'].isin(selected_min)]
 
     # --- 4. TOP ROW: 3 COLUMNS ---
-    st.title("📊 ระบบติดตามผลการประเมิน สพด. ปีการศึกษา 2567")
+    st.title("📊 ระบบติดตามผลการประเมินสถานพัฒนาเด็กปฐมวัย ปีการศึกษา 2567")
     
     top_col1, top_col2, top_col3 = st.columns([3, 4, 3])
 
