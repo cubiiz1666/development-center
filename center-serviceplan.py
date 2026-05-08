@@ -62,7 +62,7 @@ try:
             fig_donut = px.pie(status_counts, values='count', names='status', hole=0.6,
                                color='status',
                                color_discrete_map={'ผ่าน': '#ffd54f', 'ไม่ผ่าน': '#002d62'})
-            fig_donut.update_layout(showlegend=True, height=300, margin=dict(t=0, b=0, l=0, r=0))
+            fig_donut.update_layout(showlegend=True, height=250, margin=dict(t=0, b=0, l=0, r=0))
             st.plotly_chart(fig_donut, use_container_width=True)
 
     # คอลัมน์ 2: แผนภูมิแท่งรายจังหวัด (แทนแผนที่เพื่อให้เห็นความเปรียบเทียบชัดเจน)
