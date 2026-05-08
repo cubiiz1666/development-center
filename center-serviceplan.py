@@ -2,85 +2,112 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# 1. การตั้งค่าหน้าเว็บ (เน้นกึ่งทางการ โทน Navy Blue)
+# --- 1. SETTINGS & CUSTOM CSS ---
 st.set_page_config(page_title="สพด. Dashboard 2567", layout="wide")
+
+# ปรับแต่ง UI ให้เป็นกึ่งทางการ (Navy Blue & Amber)
 st.markdown("""
     <style>
-    .main { background-color: #f8f9fa; }
-    h1 { color: #003366; font-family: 'Sarabun', sans-serif; }
+    .main { background-color: #f0f2f6; }
     .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    h1, h2, h3 { color: #002d62; font-family: 'Sarabun', sans-serif; }
+    .header-box { background-color: #ffd54f; padding: 10px; border-radius: 5px; text-align: center; font-weight: bold; margin-bottom: 15px; }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. จัดการ URL และการดึงข้อมูล (Direct Export CSV)
-# ใช้ ID และ GID ล่าสุดที่คุณให้มา
+# --- 2. DATA LOADING (Direct Export) ---
 SHEET_ID = "1mGVj2fHIgwtOzbJTKP0_T-ABmSlmayQ1rb48rY4SSFI"
 GID = "469626894"
 url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid={GID}"
 
-@st.cache_data(ttl=3600) # อัปเดตข้อมูลทุก 1 ชั่วโมง
+@st.cache_data(ttl=3600)
 def load_data(link):
     data = pd.read_csv(link)
-    # ล้างช่องว่างและแปลงเป็นตัวเล็กเพื่อความแม่นยำในการอ้างอิง
-    data.columns = data.columns.str.strip().str.lower()
+    # ล้างชื่อคอลัมน์: ตัดช่องว่าง, ตัวเล็กหมด, ลบจุดและขีดตามที่คุณแก้ไข
+    data.columns = data.columns.str.strip().str.lower().str.replace('.', '').str.replace('-', '')
     return data
 
 try:
     df = load_data(url)
     
+    # --- 3. SIDEBAR FILTERS ---
+    st.sidebar.image("https://www.anamai.moph.go.th/assets/img/logo_anamai.png", width=100) # ตัวอย่าง Logo
+    st.sidebar.title("ตัวกรองข้อมูล")
+    
+    # Filter: เขตสุขภาพ
+    if 'healthzone' in df.columns:
+        zone_options = sorted(df['healthzone'].unique())
+        selected_zones = st.sidebar.multiselect("เลือกเขตสุขภาพ", zone_options, default=zone_options)
+        df_filtered = df[df['healthzone'].isin(selected_zones)]
+    else:
+        df_filtered = df
+
+    # Filter: สังกัด (ministry)
+    if 'ministry' in df.columns:
+        ministry_options = sorted(df['ministry'].unique())
+        selected_min = st.sidebar.multiselect("เลือกสังกัด", ministry_options, default=ministry_options)
+        df_filtered = df_filtered[df_filtered['ministry'].isin(selected_min)]
+
+    # --- 4. TOP ROW: 3 COLUMNS ---
     st.title("📊 ระบบติดตามผลการประเมิน สพด. ปีการศึกษา 2567")
-    st.write("---")
+    
+    top_col1, top_col2, top_col3 = st.columns([3, 4, 3])
 
-    # 3. Sidebar สำหรับคัดกรองข้อมูล (Filters)
-    st.sidebar.header("🔍 ตัวเลือกการกรอง")
-    
-    # ตรวจสอบชื่อคอลัมน์ใหม่ (healthzone)
-    col_zone = "healthzone"
-    if col_zone in df.columns:
-        zone_list = sorted(df[col_zone].unique())
-        selected_zone = st.sidebar.multiselect("เลือกเขตสุขภาพ", options=zone_list, default=zone_list)
-        df = df[df[col_zone].isin(selected_zone)]
-    
-    # ตัวกรองจังหวัด
-    if "province" in df.columns:
-        prov_list = sorted(df["province"].unique())
-        selected_prov = st.sidebar.multiselect("เลือกจังหวัด", options=prov_list, default=prov_list)
-        df = df[df["province"].isin(selected_prov)]
+    # คอลัมน์ 1: Donut Chart (ระดับคุณภาพ)
+    with top_col1:
+        st.markdown('<div class="header-box">ระดับคุณภาพการประเมิน</div>', unsafe_allow_html=True)
+        if 'passfailed' in df_filtered.columns:
+            status_counts = df_filtered['passfailed'].value_counts().reset_index()
+            status_counts.columns = ['status', 'count']
+            fig_donut = px.pie(status_counts, values='count', names='status', hole=0.6,
+                               color='status',
+                               color_discrete_map={'ผ่าน': '#ffd54f', 'ไม่ผ่าน': '#002d62'})
+            fig_donut.update_layout(showlegend=True, height=300, margin=dict(t=0, b=0, l=0, r=0))
+            st.plotly_chart(fig_donut, use_container_width=True)
 
-    # 4. ส่วนแสดงผลหลัก (Key Metrics)
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.metric("จำนวน สพด. ทั้งหมด", f"{len(df):,}")
-    
-    with col2:
-        if "passfailed" in df.columns:
-            pass_count = len(df[df["passfailed"].str.contains("ผ่าน", na=False)])
-            pass_rate = (pass_count / len(df)) * 100 if len(df) > 0 else 0
-            st.metric("ร้อยละการผ่านเกณฑ์", f"{pass_rate:.1f}%")
-    
-    with col3:
-        # สมมติชื่อใหม่ของ 3.1.3ข คือ results313b (ตามกฎไม่มีไทย/จุด/ขีด)
-        col_313 = "results313b" 
-        if col_313 in df.columns:
-            pass_313 = len(df[df[col_313].str.contains("ผ่าน", na=False)])
-            st.metric("ผ่านเกณฑ์ 3.1.3ข", f"{pass_313:,}")
+    # คอลัมน์ 2: แผนภูมิแท่งรายจังหวัด (แทนแผนที่เพื่อให้เห็นความเปรียบเทียบชัดเจน)
+    with top_col2:
+        st.markdown('<div class="header-box">การกระจายตัวรายจังหวัด</div>', unsafe_allow_html=True)
+        if 'province' in df_filtered.columns:
+            prov_data = df_filtered.groupby(['province', 'passfailed']).size().reset_index(name='counts')
+            fig_bar = px.bar(prov_data, x='province', y='counts', color='passfailed',
+                             barmode='stack', height=300,
+                             color_discrete_map={'ผ่าน': '#ffd54f', 'ไม่ผ่าน': '#002d62'},
+                             template="plotly_white")
+            fig_bar.update_layout(xaxis_title=None, yaxis_title=None, margin=dict(t=0, b=0, l=0, r=0))
+            st.plotly_chart(fig_bar, use_container_width=True)
 
-    # 5. กราฟวิเคราะห์ (Visualizations)
-    st.subheader("📊 สรุปผลการประเมินแยกตามพื้นที่")
-    
-    if "province" in df.columns and "passfailed" in df.columns:
-        fig = px.histogram(df, x="province", color="passfailed",
-                           title="จำนวน สพด. ที่ผ่าน/ไม่ผ่านเกณฑ์ รายจังหวัด",
-                           barmode="group",
-                           color_discrete_map={"ผ่าน": "#004d40", "ไม่ผ่าน": "#b71c1c"},
-                           template="plotly_white")
-        st.plotly_chart(fig, use_container_width=True)
+    # คอลัมน์ 3: Search & KPI
+    with top_col3:
+        st.markdown('<div class="header-box">ค้นหาและสรุปผล</div>', unsafe_allow_html=True)
+        search_id = st.text_input("🔍 ค้นหารหัส สพด. (10 หลัก)", placeholder="ใส่รหัสที่นี่...")
+        
+        if search_id:
+            search_res = df_filtered[df_filtered['userid'].astype(str).str.contains(search_id)]
+            if not search_res.empty:
+                st.info(f"พบข้อมูล: {search_res.iloc[0]['center']}")
+            else:
+                st.warning("ไม่พบรหัสนี้ในฐานข้อมูล")
 
-    # 6. ตารางข้อมูลดิบ (Data Table)
-    with st.expander("📂 ดูรายละเอียดข้อมูลทั้งหมด"):
-        st.dataframe(df, use_container_width=True)
+        # KPI Metrics
+        total_n = len(df_filtered)
+        st.metric("จำนวน สพด. ทั้งหมด (แห่ง)", f"{total_n:,}")
+        
+        if 'passfailed' in df_filtered.columns:
+            pass_n = len(df_filtered[df_filtered['passfailed'] == "ผ่าน"])
+            st.metric("ผ่านเกณฑ์มาตรฐาน", f"{pass_n:,} แห่ง")
+
+    # --- 5. BOTTOM ROW: DATA TABLE ---
+    st.markdown("---")
+    st.subheader("📂 รายละเอียดข้อมูลสถานพัฒนาเด็กปฐมวัย")
+    
+    # ตกแต่งตารางให้น่าอ่าน
+    display_cols = ['userid', 'center', 'province', 'healthzone', 'passfailed', 'results313b']
+    # กรองเฉพาะคอลัมน์ที่มีอยู่จริงเพื่อป้องกัน Error
+    existing_cols = [c for c in display_cols if c in df_filtered.columns]
+    
+    st.dataframe(df_filtered[existing_cols], use_container_width=True, height=400)
 
 except Exception as e:
-    st.error(f"❌ ไม่สามารถโหลดข้อมูลได้ หรือชื่อคอลัมน์ไม่ตรง: {e}")
-    st.info("คำแนะนำ: ตรวจสอบว่าชื่อคอลัมน์ใน Google Sheets ตรงกับใน Code หรือไม่")
+    st.error(f"เกิดข้อผิดพลาดทางเทคนิค: {e}")
+    st.info("กรุณาตรวจสอบชื่อคอลัมน์ใน Google Sheets อีกครั้ง")
