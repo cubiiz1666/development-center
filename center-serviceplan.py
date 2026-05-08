@@ -108,33 +108,38 @@ try:
     # คอลัมน์ 3: Search & KPI
     with top_col3:
         st.markdown('<div class="header-box">ค้นหาและสรุปผล</div>', unsafe_allow_html=True)
-        search_id = st.text_input("🔍 ค้นหารหัส สพด. (10 หลัก)", placeholder="ใส่รหัสที่นี่...")
         
+        # 1. รับค่าจากช่องค้นหา
+        search_id = st.text_input("🔍 ค้นหารหัส สพด. (10 หลัก)", placeholder="ใส่รหัสเพื่อกรองตาราง...")
+        
+        # 2. ทำการกรองข้อมูลใน df_filtered ทันทีหากมีการค้นหา
         if search_id:
-            search_res = df_filtered[df_filtered['userid'].astype(str).str.contains(search_id)]
-            if not search_res.empty:
-                st.info(f"พบข้อมูล: {search_res.iloc[0]['center']}")
+            # กรองให้เหลือเฉพาะแถวที่ userid ตรงกับที่พิมพ์ (รองรับทั้งตัวเลขและข้อความ)
+            df_table_display = df_filtered[df_filtered['userid'].astype(str).str.contains(search_id)]
+            
+            if not df_table_display.empty:
+                st.success(f"🔍 กรองข้อมูลพบ: {len(df_table_display)} รายการ")
             else:
-                st.warning("ไม่พบรหัสนี้ในฐานข้อมูล")
+                st.warning("⚠️ ไม่พบรหัสที่ระบุในฐานข้อมูล")
+                df_table_display = df_filtered # ถ้าไม่เจอให้แสดงผลเดิมหรือตารางว่างตามต้องการ
+        else:
+            df_table_display = df_filtered
 
-        # KPI Metrics
-        total_n = len(df_filtered)
-        st.metric("จำนวน สพด. ทั้งหมด (แห่ง)", f"{total_n:,}")
-        
+        # แสดง KPI (ใช้ df_filtered เดิมเพื่อให้ยอดรวมไม่หายไปขณะค้นหา)
+        st.metric("จำนวน สพด. ทั้งหมด (แห่ง)", f"{len(df_filtered):,}")
         if 'passfailed' in df_filtered.columns:
             pass_n = len(df_filtered[df_filtered['passfailed'] == "ผ่าน"])
-            st.metric("ผ่านเกณฑ์มาตรฐาน (แห่ง)", f"{pass_n:,}")
-
-    # --- 5. BOTTOM ROW: DATA TABLE ---
+            st.metric("ผ่านเกณฑ์มาตรฐาน", f"{pass_n:,} แห่ง")
+   
+  # --- 5. BOTTOM ROW: DATA TABLE ---
     st.markdown("---")
     st.subheader("📂 รายละเอียดข้อมูลสถานพัฒนาเด็กปฐมวัย")
     
-    # ตกแต่งตารางให้น่าอ่าน
+    # ใช้ df_table_display ที่ผ่านการกรองจากช่องค้นหามาแสดง
     display_cols = ['userid', 'center', 'province', 'healthzone', 'passfailed', 'results313b']
-    # กรองเฉพาะคอลัมน์ที่มีอยู่จริงเพื่อป้องกัน Error
-    existing_cols = [c for c in display_cols if c in df_filtered.columns]
+    existing_cols = [c for c in display_cols if c in df_table_display.columns]
     
-    st.dataframe(df_filtered[existing_cols], use_container_width=True, height=400)
+    st.dataframe(df_table_display[existing_cols], use_container_width=True, height=400)
 
 except Exception as e:
     st.error(f"เกิดข้อผิดพลาดทางเทคนิค: {e}")
