@@ -5,7 +5,6 @@ import plotly.express as px
 # --- 1. SETTINGS & CUSTOM CSS ---
 st.set_page_config(page_title="สพด. Dashboard 2567", layout="wide")
 
-# ปรับแต่ง UI ให้เป็นกึ่งทางการ (Navy Blue & Amber)
 st.markdown("""
     <style>
     .main { background-color: #f0f2f6; }
@@ -15,7 +14,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. DATA LOADING (Direct Export) ---
+# --- 2. DATA LOADING ---
 SHEET_ID = "1mGVj2fHIgwtOzbJTKP0_T-ABmSlmayQ1rb48rY4SSFI"
 GID = "469626894"
 url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid={GID}"
@@ -23,52 +22,34 @@ url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid=
 @st.cache_data(ttl=3600)
 def load_data(link):
     data = pd.read_csv(link)
-    # ล้างชื่อคอลัมน์: ตัดช่องว่าง, ตัวเล็กหมด, ลบจุดและขีดตามที่คุณแก้ไข
     data.columns = data.columns.str.strip().str.lower().str.replace('.', '').str.replace('-', '')
     return data
 
+# --- 3. MAIN LOGIC (ห้ามเขียน FILE_ID คั่นระหว่าง try และ except) ---
 try:
     df = load_data(url)
     
-    # --- 3. SIDEBAR FILTERS ---
-# แปลงลิงก์ Google Drive เป็น Direct Link
-FILE_ID = '1jnYmMkGMYvNreRbXV3jqZ20UQYxcm1mW'
-image_url = f'https://docs.google.com/uc?export=view&id={FILE_ID}'
-
-# แสดงรูปภาพใน Sidebar (ปรับขนาดให้พอดี)
-st.sidebar.image(image_url, use_container_width=True)
-
-st.sidebar.markdown("---") # เส้นคั่น
-st.sidebar.title("🔍 ตัวเลือกการกรอง")
-
-# ส่วน Filter (เขตสุขภาพ)
-if 'healthzone' in df.columns:
-    zone_options = sorted(df['healthzone'].unique())
-    selected_zones = st.sidebar.multiselect(
-        "เลือกเขตสุขภาพ", 
-        options=zone_options, 
-        default=zone_options
-    )
-    df_filtered = df[df['healthzone'].isin(selected_zones)]
-else:
-    df_filtered = df
-
-# ส่วน Filter (จังหวัด) - เพิ่มเติมเพื่อให้เหมือน Dashboard ต้นฉบับ
-if 'province' in df_filtered.columns:
-    province_options = sorted(df_filtered['province'].unique())
-    selected_provinces = st.sidebar.multiselect(
-        "เลือกจังหวัด", 
-        options=province_options, 
-        default=province_options
-    )
-    df_filtered = df_filtered[df_filtered['province'].isin(selected_provinces)]
+    # --- 3.1 SIDEBAR FILTERS (อยู่ข้างใน try เพื่อให้แน่ใจว่ามีข้อมูลก่อนรัน) ---
+    FILE_ID = '1jnYmMkGMYvNreRbXV3jqZ20UQYxcm1mW'
+    image_url = f'https://docs.google.com/uc?export=view&id={FILE_ID}'
+    
+    st.sidebar.image(image_url, use_container_width=True)
+    st.sidebar.markdown("---")
+    st.sidebar.title("🔍 ตัวเลือกการกรอง")
+    
+    if 'healthzone' in df.columns:
+        zone_options = sorted(df['healthzone'].unique())
+        selected_zones = st.sidebar.multiselect("เลือกเขตสุขภาพ", zone_options, default=zone_options)
+        df_filtered = df[df['healthzone'].isin(selected_zones)]
+    else:
+        df_filtered = df
 
     # --- 4. TOP ROW: 3 COLUMNS ---
     st.title("📊 ระบบติดตามผลการประเมิน สพด. ปีการศึกษา 2567")
     
     top_col1, top_col2, top_col3 = st.columns([3, 4, 3])
 
-   # คอลัมน์ 1: Donut Chart (ระดับคุณภาพ)
+    # คอลัมน์ 1: Donut Chart
     with top_col1:
         st.markdown('<div class="header-box">ระดับคุณภาพการประเมิน</div>', unsafe_allow_html=True)
         if 'passfailed' in df_filtered.columns:
@@ -78,21 +59,15 @@ if 'province' in df_filtered.columns:
                                color='status',
                                color_discrete_map={'ผ่าน': '#ffd54f', 'ไม่ผ่าน': '#002d62'})
             
-            # ปรับตำแหน่ง Legend ไว้ด้านล่าง (Horizontal Legend)
+            # ปรับ Legend ไว้ใต้รูปตามที่คุณต้องการ
             fig_donut.update_layout(
-                legend=dict(
-                    orientation="h",      # กำหนดเป็นแนวนอน
-                    yanchor="bottom",
-                    y=-0.3,               # ปรับค่าติดลบเพื่อให้ลงไปอยู่ใต้กราฟ
-                    xanchor="center",
-                    x=0.5                 # จัดให้อยู่กึ่งกลาง
-                ),
-                margin=dict(t=0, b=100, l=0, r=0), # เพิ่ม Margin ด้านล่าง (b) เพื่อไม่ให้โดนตัดขอบ
-                height=320 # เพิ่มความสูงเล็กน้อยเพื่อให้มีพื้นที่สำหรับ Legend
+                legend=dict(orientation="h", yanchor="bottom", y=-0.3, xanchor="center", x=0.5),
+                margin=dict(t=0, b=80, l=0, r=0),
+                height=380
             )
             st.plotly_chart(fig_donut, use_container_width=True)
 
-    # คอลัมน์ 2: แผนภูมิแท่งรายจังหวัด (แทนแผนที่เพื่อให้เห็นความเปรียบเทียบชัดเจน)
+    # คอลัมน์ 2: กราฟรายจังหวัด
     with top_col2:
         st.markdown('<div class="header-box">การกระจายตัวรายจังหวัด</div>', unsafe_allow_html=True)
         if 'province' in df_filtered.columns:
@@ -114,27 +89,19 @@ if 'province' in df_filtered.columns:
             if not search_res.empty:
                 st.info(f"พบข้อมูล: {search_res.iloc[0]['center']}")
             else:
-                st.warning("ไม่พบรหัสนี้ในฐานข้อมูล")
+                st.warning("ไม่พบรหัสนี้")
 
-        # KPI Metrics
-        total_n = len(df_filtered)
-        st.metric("จำนวน สพด. ทั้งหมด (แห่ง)", f"{total_n:,}")
-        
+        st.metric("จำนวน สพด. ทั้งหมด (แห่ง)", f"{len(df_filtered):,}")
         if 'passfailed' in df_filtered.columns:
             pass_n = len(df_filtered[df_filtered['passfailed'] == "ผ่าน"])
-            st.metric("ผ่านเกณฑ์มาตรฐาน (แห่ง)", f"{pass_n:,}")
+            st.metric("ผ่านเกณฑ์มาตรฐาน", f"{pass_n:,} แห่ง")
 
     # --- 5. BOTTOM ROW: DATA TABLE ---
     st.markdown("---")
     st.subheader("📂 รายละเอียดข้อมูลสถานพัฒนาเด็กปฐมวัย")
-    
-    # ตกแต่งตารางให้น่าอ่าน
     display_cols = ['userid', 'center', 'province', 'healthzone', 'passfailed', 'results313b']
-    # กรองเฉพาะคอลัมน์ที่มีอยู่จริงเพื่อป้องกัน Error
     existing_cols = [c for c in display_cols if c in df_filtered.columns]
-    
     st.dataframe(df_filtered[existing_cols], use_container_width=True, height=400)
 
 except Exception as e:
-    st.error(f"เกิดข้อผิดพลาดทางเทคนิค: {e}")
-    st.info("กรุณาตรวจสอบชื่อคอลัมน์ใน Google Sheets อีกครั้ง")
+    st.error(f"เกิดข้อผิดพลาด: {e}")
