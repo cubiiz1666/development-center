@@ -1,79 +1,86 @@
 import streamlit as st
-from streamlit_gsheets import GSheetsConnection
 import pandas as pd
 import plotly.express as px
 
-# 1. ตั้งค่าหน้าเว็บ (โทนสีน้ำเงินเข้ม - กึ่งทางการ)
-st.set_page_config(page_title="Oral Health Dashboard 2026", layout="wide")
+# 1. การตั้งค่าหน้าเว็บ (เน้นกึ่งทางการ โทน Navy Blue)
+st.set_page_config(page_title="สพด. Dashboard 2567", layout="wide")
 st.markdown("""
     <style>
-    .main { background-color: #f5f7f9; }
-    h1 { color: #003366; } /* Navy Blue */
+    .main { background-color: #f8f9fa; }
+    h1 { color: #003366; font-family: 'Sarabun', sans-serif; }
+    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("📊 ระบบรายงานผลการประเมิน สพด. ปีการศึกษา 2567")
+# 2. จัดการ URL และการดึงข้อมูล (Direct Export CSV)
+# ใช้ ID และ GID ล่าสุดที่คุณให้มา
+SHEET_ID = "1mGVj2fHIgwtOzbJTKP0_T-ABmSlmayQ1rb48rY4SSFI"
+GID = "469626894"
+url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid={GID}"
 
-# 2. เชื่อมต่อข้อมูลจาก Google Sheets (ระบุ URL ของชีทคุณ)
-sheet_id = "1mGVj2fHIgwtOzbJTKP0_T-ABmSlmayQ1rb48rY4SSFI"
-gid_id = "469626894"
-url = "https://docs.google.com/spreadsheets/d/1mGVj2fHIgwtOzbJTKP0_T-ABmSlmayQ1rb48rY4SSFI/edit?gid=469626894#gid=469626894"
-
-@st.cache_data(ttl=86400) # อัปเดตข้อมูลทุก 24 ชั่วโมง
-def load_data(url):
-    # ใช้ pandas อ่านโดยตรง จะเสถียรกว่าในกรณี public sheet
-    return pd.read_csv(url)
+@st.cache_data(ttl=3600) # อัปเดตข้อมูลทุก 1 ชั่วโมง
+def load_data(link):
+    data = pd.read_csv(link)
+    # ล้างช่องว่างและแปลงเป็นตัวเล็กเพื่อความแม่นยำในการอ้างอิง
+    data.columns = data.columns.str.strip().str.lower()
+    return data
 
 try:
     df = load_data(url)
-    # 1. ล้างช่องว่าง (Strip) และแปลงเป็นตัวพิมพ์เล็กทั้งหมดเพื่อความแม่นยำ
-    df.columns = df.columns.str.strip().str.lower()
     
-    # 2. (ด่วน) ใช้คำสั่งนี้เพื่อดูว่าตอนนี้ Pandas เห็นชื่อคอลัมน์เป็นอะไรบ้าง
-    # มันจะแสดงรายชื่อคอลัมน์ออกมาที่หน้าจอ Dashboard เลยครับ
-    st.write("ตรวจสอบชื่อคอลัมน์ที่มีในระบบ:", df.columns.tolist())
+    st.title("📊 ระบบติดตามผลการประเมิน สพด. ปีการศึกษา 2567")
+    st.write("---")
 
-    st.success("เชื่อมต่อข้อมูลสำเร็จ!")
-
-    # 3. กำหนดชื่อคอลัมน์ที่ต้องการใช้ (ตรวจสอบจากการพิมพ์ในข้อ 2)
-    # จากข้อมูลในไฟล์ ชื่อควรจะเป็น 'health-zone'
-    col_zone = "health-zone" 
-
+    # 3. Sidebar สำหรับคัดกรองข้อมูล (Filters)
+    st.sidebar.header("🔍 ตัวเลือกการกรอง")
+    
+    # ตรวจสอบชื่อคอลัมน์ใหม่ (healthzone)
+    col_zone = "healthzone"
     if col_zone in df.columns:
-        options_list = df[col_zone].unique()
-        selected_zone = st.sidebar.multiselect(
-            "เลือกเขตสุขภาพ", 
-            options=options_list, 
-            default=options_list
-        )
-        filtered_df = df[df[col_zone].isin(selected_zone)]
-    else:
-        st.warning(f"ไม่พบคอลัมน์ '{col_zone}' กรุณาเปลี่ยนชื่อใน Code ให้ตรงกับรายการด้านบน")
-        filtered_df = df
+        zone_list = sorted(df[col_zone].unique())
+        selected_zone = st.sidebar.multiselect("เลือกเขตสุขภาพ", options=zone_list, default=zone_list)
+        df = df[df[col_zone].isin(selected_zone)]
+    
+    # ตัวกรองจังหวัด
+    if "province" in df.columns:
+        prov_list = sorted(df["province"].unique())
+        selected_prov = st.sidebar.multiselect("เลือกจังหวัด", options=prov_list, default=prov_list)
+        df = df[df["province"].isin(selected_prov)]
+
+    # 4. ส่วนแสดงผลหลัก (Key Metrics)
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric("จำนวน สพด. ทั้งหมด", f"{len(df):,}")
+    
+    with col2:
+        if "passfailed" in df.columns:
+            pass_count = len(df[df["passfailed"].str.contains("ผ่าน", na=False)])
+            pass_rate = (pass_count / len(df)) * 100 if len(df) > 0 else 0
+            st.metric("ร้อยละการผ่านเกณฑ์", f"{pass_rate:.1f}%")
+    
+    with col3:
+        # สมมติชื่อใหม่ของ 3.1.3ข คือ results313b (ตามกฎไม่มีไทย/จุด/ขีด)
+        col_313 = "results313b" 
+        if col_313 in df.columns:
+            pass_313 = len(df[df[col_313].str.contains("ผ่าน", na=False)])
+            st.metric("ผ่านเกณฑ์ 3.1.3ข", f"{pass_313:,}")
+
+    # 5. กราฟวิเคราะห์ (Visualizations)
+    st.subheader("📊 สรุปผลการประเมินแยกตามพื้นที่")
+    
+    if "province" in df.columns and "passfailed" in df.columns:
+        fig = px.histogram(df, x="province", color="passfailed",
+                           title="จำนวน สพด. ที่ผ่าน/ไม่ผ่านเกณฑ์ รายจังหวัด",
+                           barmode="group",
+                           color_discrete_map={"ผ่าน": "#004d40", "ไม่ผ่าน": "#b71c1c"},
+                           template="plotly_white")
+        st.plotly_chart(fig, use_container_width=True)
+
+    # 6. ตารางข้อมูลดิบ (Data Table)
+    with st.expander("📂 ดูรายละเอียดข้อมูลทั้งหมด"):
+        st.dataframe(df, use_container_width=True)
 
 except Exception as e:
-    st.error(f"เกิดข้อผิดพลาด: {e}")
-
-# 3. ส่วนฟิลเตอร์สำหรับเจ้าหน้าที่ (Sidebar)
-st.sidebar.header("ตัวเลือกการกรองข้อมูล")
-selected_zone = st.sidebar.multiselect("เลือกเขตสุขภาพ", options=df["health-zone"].unique(), default=df["health-zone"].unique())
-filtered_df = df[df["health-zone"].isin(selected_zone)]
-
-# 4. หน้าจอหลักสำหรับผู้บริหาร (Metrics)
-col1, col2, col3 = st.columns(3)
-total_centers = len(filtered_df)
-pass_rate = (len(filtered_df[filtered_df["pass-failed"] == "ผ่าน"]) / total_centers) * 100
-
-col1.metric("จำนวน สพด. ทั้งหมด", f"{total_centers:,} แห่ง")
-col2.metric("ผ่านเกณฑ์มาตรฐาน", f"{pass_rate:.1f}%")
-col3.metric("ผลประเมิน 3.1.3ข (ผ่าน)", len(filtered_df[filtered_df["results-3.1.3ข"] == "ผ่าน"]))
-
-# 5. กราฟวิเคราะห์รายพื้นที่
-st.subheader("📈 สถานะการประเมินแยกตามจังหวัด")
-fig = px.histogram(filtered_df, x="province", color="pass-failed", 
-                   barmode="group", color_discrete_map={"ผ่าน": "#2E7D32", "ไม่ผ่าน": "#C62828"})
-st.plotly_chart(fig, use_container_width=True)
-
-# 6. ตารางข้อมูลละเอียด
-with st.expander("ดูข้อมูลรายสถานประกอบการ"):
-    st.write(filtered_df[["no.", "development-center", "province", "pass-failed", "results-3.1.3ข"]])
+    st.error(f"❌ ไม่สามารถโหลดข้อมูลได้ หรือชื่อคอลัมน์ไม่ตรง: {e}")
+    st.info("คำแนะนำ: ตรวจสอบว่าชื่อคอลัมน์ใน Google Sheets ตรงกับใน Code หรือไม่")
