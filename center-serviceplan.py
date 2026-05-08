@@ -31,7 +31,7 @@ try:
     df = load_data(url)
     
     # --- 3. SIDEBAR FILTERS ---
-    st.sidebar.image("https://www.anamai.moph.go.th/assets/img/logo_anamai.png", width=100) # ตัวอย่าง Logo
+    st.sidebar.image("https://drive.google.com/drive/u/0/folders/15o59jMEXGJ8NEzZlAZRqzEis-sBenxvC", width=100) # ตัวอย่าง Logo
     st.sidebar.title("ตัวกรองข้อมูล")
     
     # Filter: เขตสุขภาพ
