@@ -53,7 +53,7 @@ try:
     
     top_col1, top_col2, top_col3 = st.columns([3, 4, 3])
 
-    # คอลัมน์ 1: Donut Chart (ระดับคุณภาพ)
+   # คอลัมน์ 1: Donut Chart (ระดับคุณภาพ)
     with top_col1:
         st.markdown('<div class="header-box">ระดับคุณภาพการประเมิน</div>', unsafe_allow_html=True)
         if 'passfailed' in df_filtered.columns:
@@ -62,7 +62,19 @@ try:
             fig_donut = px.pie(status_counts, values='count', names='status', hole=0.6,
                                color='status',
                                color_discrete_map={'ผ่าน': '#ffd54f', 'ไม่ผ่าน': '#002d62'})
-            fig_donut.update_layout(showlegend=True, height=250, margin=dict(t=0, b=0, l=0, r=0))
+            
+            # ปรับตำแหน่ง Legend ไว้ด้านล่าง (Horizontal Legend)
+            fig_donut.update_layout(
+                legend=dict(
+                    orientation="h",      # กำหนดเป็นแนวนอน
+                    yanchor="bottom",
+                    y=-0.3,               # ปรับค่าติดลบเพื่อให้ลงไปอยู่ใต้กราฟ
+                    xanchor="center",
+                    x=0.5                 # จัดให้อยู่กึ่งกลาง
+                ),
+                margin=dict(t=0, b=80, l=0, r=0), # เพิ่ม Margin ด้านล่าง (b) เพื่อไม่ให้โดนตัดขอบ
+                height=380 # เพิ่มความสูงเล็กน้อยเพื่อให้มีพื้นที่สำหรับ Legend
+            )
             st.plotly_chart(fig_donut, use_container_width=True)
 
     # คอลัมน์ 2: แผนภูมิแท่งรายจังหวัด (แทนแผนที่เพื่อให้เห็นความเปรียบเทียบชัดเจน)
