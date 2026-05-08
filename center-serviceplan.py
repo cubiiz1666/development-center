@@ -31,11 +31,15 @@ try:
     df = load_data(url)
     
     # --- 3.1 SIDEBAR FILTERS (อยู่ข้างใน try เพื่อให้แน่ใจว่ามีข้อมูลก่อนรัน) ---
+   # ใช้ลิงก์รูปแบบใหม่ที่รองรับการแสดงผลบนเว็บได้เสถียรกว่า
     FILE_ID = '1jnYmMkGMYvNreRbXV3jqZ20UQYxcm1mW'
-    image_url = f'https://docs.google.com/uc?export=view&id={FILE_ID}'
+    # ปรับเป็นลิงก์ thumbnail ขนาดใหญ่เพื่อให้ดึงภาพได้รวดเร็ว
+    image_url = f'https://drive.google.com/thumbnail?id={FILE_ID}&sz=w1000'
     
+    # ใส่ภาพโลโก้
     st.sidebar.image(image_url, use_container_width=True)
     st.sidebar.markdown("---")
+    
     st.sidebar.title("🔍 ตัวเลือกการกรอง")
     
     if 'healthzone' in df.columns:
