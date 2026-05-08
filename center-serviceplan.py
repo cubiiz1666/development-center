@@ -72,7 +72,7 @@ try:
                     xanchor="center",
                     x=0.5                 # จัดให้อยู่กึ่งกลาง
                 ),
-                margin=dict(t=0, b=50, l=0, r=0), # เพิ่ม Margin ด้านล่าง (b) เพื่อไม่ให้โดนตัดขอบ
+                margin=dict(t=0, b=0, l=0, r=0), # เพิ่ม Margin ด้านล่าง (b) เพื่อไม่ให้โดนตัดขอบ
                 height=320 # เพิ่มความสูงเล็กน้อยเพื่อให้มีพื้นที่สำหรับ Legend
             )
             st.plotly_chart(fig_donut, use_container_width=True)
