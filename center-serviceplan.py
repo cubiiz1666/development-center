@@ -31,22 +31,37 @@ try:
     df = load_data(url)
     
     # --- 3. SIDEBAR FILTERS ---
-    st.sidebar.image("https://drive.google.com/drive/u/0/folders/15o59jMEXGJ8NEzZlAZRqzEis-sBenxvC", width=100) # ตัวอย่าง Logo
-    st.sidebar.title("ตัวกรองข้อมูล")
-    
-    # Filter: เขตสุขภาพ
-    if 'healthzone' in df.columns:
-        zone_options = sorted(df['healthzone'].unique())
-        selected_zones = st.sidebar.multiselect("เลือกเขตสุขภาพ", zone_options, default=zone_options)
-        df_filtered = df[df['healthzone'].isin(selected_zones)]
-    else:
-        df_filtered = df
+# แปลงลิงก์ Google Drive เป็น Direct Link
+FILE_ID = '1jnYmMkGMYvNreRbXV3jqZ20UQYxcm1mW'
+image_url = f'https://docs.google.com/uc?export=view&id={FILE_ID}'
 
-    # Filter: สังกัด (ministry)
-    if 'ministry' in df.columns:
-        ministry_options = sorted(df['ministry'].unique())
-        selected_min = st.sidebar.multiselect("เลือกสังกัด", ministry_options, default=ministry_options)
-        df_filtered = df_filtered[df_filtered['ministry'].isin(selected_min)]
+# แสดงรูปภาพใน Sidebar (ปรับขนาดให้พอดี)
+st.sidebar.image(image_url, use_container_width=True)
+
+st.sidebar.markdown("---") # เส้นคั่น
+st.sidebar.title("🔍 ตัวเลือกการกรอง")
+
+# ส่วน Filter (เขตสุขภาพ)
+if 'healthzone' in df.columns:
+    zone_options = sorted(df['healthzone'].unique())
+    selected_zones = st.sidebar.multiselect(
+        "เลือกเขตสุขภาพ", 
+        options=zone_options, 
+        default=zone_options
+    )
+    df_filtered = df[df['healthzone'].isin(selected_zones)]
+else:
+    df_filtered = df
+
+# ส่วน Filter (จังหวัด) - เพิ่มเติมเพื่อให้เหมือน Dashboard ต้นฉบับ
+if 'province' in df_filtered.columns:
+    province_options = sorted(df_filtered['province'].unique())
+    selected_provinces = st.sidebar.multiselect(
+        "เลือกจังหวัด", 
+        options=province_options, 
+        default=province_options
+    )
+    df_filtered = df_filtered[df_filtered['province'].isin(selected_provinces)]
 
     # --- 4. TOP ROW: 3 COLUMNS ---
     st.title("📊 ระบบติดตามผลการประเมิน สพด. ปีการศึกษา 2567")
