@@ -95,7 +95,7 @@ try:
         
         if 'passfailed' in df_filtered.columns:
             pass_n = len(df_filtered[df_filtered['passfailed'] == "ผ่าน"])
-            st.metric("ผ่านเกณฑ์มาตรฐาน", f"{pass_n:,} แห่ง")
+            st.metric("ผ่านเกณฑ์มาตรฐาน (แห่ง)", f"{pass_n:,}")
 
     # --- 5. BOTTOM ROW: DATA TABLE ---
     st.markdown("---")
