@@ -89,7 +89,7 @@ try:
             fig_donut.update_layout(
                 showlegend=False, # ปิด Legend เดิม
                 margin=dict(t=0, b=0, l=0, r=0),
-                height=300
+                height=250
             )
             st.plotly_chart(fig_donut, use_container_width=True)
 
@@ -129,7 +129,7 @@ try:
         st.metric("จำนวน สพด. ทั้งหมด (แห่ง)", f"{len(df_filtered):,}")
         if 'passfailed' in df_filtered.columns:
             pass_n = len(df_filtered[df_filtered['passfailed'] == "ผ่าน"])
-            st.metric("ผ่านเกณฑ์มาตรฐาน", f"{pass_n:,} แห่ง")
+            st.metric("ผ่านเกณฑ์มาตรฐาน (แห่ง)", f"{pass_n:,}")
    
   # --- 5. BOTTOM ROW: DATA TABLE ---
     st.markdown("---")
