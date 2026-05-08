@@ -76,7 +76,7 @@ try:
                     x=0.5                 # จัดให้อยู่กึ่งกลาง
                 ),
                 margin=dict(t=0, b=80, l=0, r=0), # เพิ่ม Margin ด้านล่าง (b) เพื่อไม่ให้โดนตัดขอบ
-                height=380 # เพิ่มความสูงเล็กน้อยเพื่อให้มีพื้นที่สำหรับ Legend
+                height=350 # เพิ่มความสูงเล็กน้อยเพื่อให้มีพื้นที่สำหรับ Legend
             )
             st.plotly_chart(fig_donut, use_container_width=True)
 
@@ -110,7 +110,7 @@ try:
         
         if 'passfailed' in df_filtered.columns:
             pass_n = len(df_filtered[df_filtered['passfailed'] == "ผ่าน"])
-            st.metric("ผ่านเกณฑ์มาตรฐาน", f"{pass_n:,} แห่ง")
+            st.metric("ผ่านเกณฑ์มาตรฐาน (แห่ง)", f"{pass_n:,}")
 
     # --- 5. BOTTOM ROW: DATA TABLE ---
     st.markdown("---")
